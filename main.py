@@ -3,18 +3,14 @@ import nltk
 from nltk.tokenize import word_tokenize, sent_tokenize
 import numpy as np
 
+emotions = ["Fear", "Anger", "Surprise", "Disgust", "Sadness", "Joy"]
+
 df = pd.read_csv("Data.csv")
-
 df = df.applymap(lambda x: x.lower() if isinstance(x, str) else x)
-
-
 tokensDf = pd.DataFrame(index=df.index, columns=df.columns)
 arr = df.to_numpy()
 labels = df.columns.to_list()
 
-emotions = ["Fear", "Anger", "Surprise", "Disgust", "Sadness", "Joy"]
-
-training = 30-1
 
 def countTokensDF():
     count = 0
@@ -39,33 +35,18 @@ def countTokensNP():
             count += len(words)
     print(count)
 
-def tokenizedSentences():
-    rows, cols = df.shape
-    for i in range(rows):
-        for j in range(cols):
-            text = df.iloc[0, 1]
-
-            sentences = sent_tokenize(text)
-            words = word_tokenize(text)
-
-            print(words)
-            break
-        break
-
 def getPriors(shouldPrint = 0):
     priors = {}
 
     for i in emotions:
         priors[i] = 0
-
-
-
     a, b = arr.shape
     a = 29 # [0,29] Training
 
     emotionSentenceCounts = np.zeros(len(emotions))
 
     for i in range(len(emotionSentenceCounts)):
+        #for col in range(13,14,2):
         for col in range(1,b,2):
             if(emotions[i].lower() in labels[col].lower()):
                 for k in range(a):
@@ -77,12 +58,13 @@ def getPriors(shouldPrint = 0):
                     
     totalSentences = 0
     for j in range(1,b,2):
+        sentenceMultiplier = labels[j].count('+') + 1
         for i in range(a):
             text = arr[i, j]
             if(isinstance(text, float)):
                 continue
             sentences = sent_tokenize(text)
-            totalSentences += len(sentences)
+            totalSentences += len(sentences) * sentenceMultiplier
 
     for i in range(len(emotionSentenceCounts)):
         priors[emotions[i]] = float(emotionSentenceCounts[i] / totalSentences)
@@ -98,7 +80,6 @@ def getTotalVocabSet():
 
     emotionSentenceCounts = np.zeros(int(b/2))
     priors = np.zeros(int(b/2))
-    emotionId = 0
 
     totalSentences = 0
     for j in range(1,b,2):
@@ -174,15 +155,13 @@ def getBayesValue(sentence, emotion):
 
     sentence = sentence.lower()
     vocabulary = getTotalVocabSet()
-    score = getPriors()[emotion]
+    score = np.log(getPriors()[emotion])
 
     for i in sentence:
         if i in vocabulary:
             score += np.log(liklihoods[i])
 
     return score
-
-
 
 def getBayesPrediction(sentence):
     sentence = sentence.lower()
@@ -191,16 +170,56 @@ def getBayesPrediction(sentence):
     bayesPrediction = ""
 
     for i in range(len(emotions)):
-        emotion = emotions[i].lower()
+        emotion = emotions[i]
 
         bayesValue = getBayesValue(sentence, emotion)
-        print(bayesValue, emotion)
+        #print(bayesValue, emotion)
 
         if(bayesValue > bestBayesValue):
             bayesPrediction = emotion
             bestBayesValue = bayesValue
 
     return bayesPrediction
+
+def createConfusionMatrix():
+    confusionMatrix = np.zeros((6,6))
+    # emotions = ["Fear", "Anger", "Surprise", "Disgust", "Sadness", "Joy"]
+
+    emotionToIndex = {
+        "Fear": 0,
+        "Anger": 1,
+        "Surprise": 2,
+        "Disgust": 3,
+        "Sadness": 4,
+        "Joy": 5
+    }
+
+
+    a, b = arr.shape
+    counter = 0
+    counter2 = 0
+    for j in range(1,b,2):
+    #for j in range(13,14):
+        labelEmotions = set(word_tokenize(labels[j])[:-1])
+        if("+" in labelEmotions):
+            labelEmotions.remove("+")
+        for i in range(30, a):
+            text = arr[i, j]
+            if(isinstance(text, float)):
+                continue
+            sentences = sent_tokenize(text)
+            for sentence in sentences:
+                prediction = getBayesPrediction(sentence)
+                for k in labelEmotions:
+                    counter+=1
+                    x = emotionToIndex[prediction]
+                    y = emotionToIndex[k] 
+                    confusionMatrix[x][y] += 1
+
+    print(confusionMatrix)
+    return confusionMatrix
+
+
 
 
 #question3_1(1)
@@ -209,12 +228,18 @@ def getBayesPrediction(sentence):
 sentence = "As she hugged her daughter goodbye on the first day of college, she felt both sad to see her go and joyful knowing that she was embarking on a new and exciting chapter in her life."
 #printDictNice(getEmotionLiklihoods("sadness"))
 #print(getBayesValue(sentence, "sadness"))
-print(getBayesPrediction(sentence))
 
 #printDictNice(getPriors())
 
+#print(getBayesPrediction(sentence))
 
 #print(getEmotionLiklihoods("Fear"))
 #printDictNice(getEmotionLiklihoods("Fear"))
 
 #question3_1()
+
+
+
+#printDictNice(getPriors())
+createConfusionMatrix()
+#print(printDictNice(getPriors()))
