@@ -3,7 +3,7 @@ from nltk.tokenize import word_tokenize, sent_tokenize
 
 #nltk.download('punkt')
 
-text = "This is a test sentence!"
+text = "This is a test the the sentence!"
 
 sentences = sent_tokenize(text)
 print("Sentences:", sentences)
