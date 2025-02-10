@@ -12,11 +12,9 @@ tokensDf = pd.DataFrame(index=df.index, columns=df.columns)
 arr = df.to_numpy()
 labels = df.columns.to_list()
 
+#print(labels)
+
 training = 30-1
-
-
-
-
 
 def countTokensDF():
     count = 0
@@ -109,7 +107,7 @@ def getTotalVocabSet():
 def getEmotionLiklihoods(category):
     column = -1
     for i in range(len(labels)):
-        if((category + " Sentences").lower() == labels[i].lower()):
+        if((category + " Sentence").lower() in labels[i].lower()):
             column = i 
             break
 
@@ -153,12 +151,12 @@ def printDictNice(dictionary):
 def getBayesValue(sentence, emotion):
     column = -1
     for i in range(len(labels)):
-        if((emotion + " Sentences").lower() == labels[i].lower()):
+        if((emotion + " Sentence").lower() in labels[i].lower()):
             column = i 
             break
 
     if(column == -1):
-        print("No category: ", category)
+        print("No category: ", emotion)
         return
 
     liklihoods = getEmotionLiklihoods(emotion)
@@ -178,15 +176,24 @@ def getBayesValue(sentence, emotion):
 def getBayesPrediction(sentence):
     sentence = sentence.lower()
     vocabulary = getTotalVocabSet()
+    bestBayesValue = float('-inf')
+    bayesPrediction = ""
 
     for i in range(1, len(labels), 2):
         label = labels[i]
-        index = label.find(" ")
+        index = label.find("Sentence")
+        emotion = label[:index-1]
 
+        bayesValue = getBayesValue(sentence, emotion)
+        print(bayesValue, emotion)
 
-        emotion = label[:index]
-        print(emotion)
+        if(bayesValue > bestBayesValue):
+            bayesPrediction = emotion
+            bestBayesValue = bayesValue
 
+    return bayesPrediction
+
+        
         
 
 
@@ -197,5 +204,4 @@ def getBayesPrediction(sentence):
 sentence = "As she hugged her daughter goodbye on the first day of college, she felt both sad to see her go and joyful knowing that she was embarking on a new and exciting chapter in her life."
 #printDictNice(getEmotionLiklihoods("sadness"))
 #print(getBayesValue(sentence, "sadness"))
-getBayesPrediction(sentence)
-
+print(getBayesPrediction(sentence))
