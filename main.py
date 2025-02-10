@@ -12,7 +12,7 @@ tokensDf = pd.DataFrame(index=df.index, columns=df.columns)
 arr = df.to_numpy()
 labels = df.columns.to_list()
 
-#print(labels)
+emotions = ["Fear", "Anger", "Surprise", "Disgust", "Sadness", "Joy"]
 
 training = 30-1
 
@@ -58,28 +58,34 @@ def question3_1(shouldPrint = 0):
 
     count = 0
 
-    emotionSentenceCounts = np.zeros(int(b/2))
-    priors = np.zeros(int(b/2))
+    emotionSentenceCounts = np.zeros(len(emotions))
+    priors = np.zeros(len(emotions))
     emotionId = 0
 
+    for i in range(len(emotionSentenceCounts)):
+        for col in range(1,b,2):
+            if(emotions[i].lower() in labels[col].lower()):
+                for k in range(a):
+                    text = arr[k, col]
+                    if(isinstance(text, float)):
+                        continue
+                    sentences = sent_tokenize(text)
+                    emotionSentenceCounts[i] += len(sentences)
+                    
     totalSentences = 0
     for j in range(1,b,2):
         for i in range(a):
             text = arr[i, j]
-            print(text)
             if(isinstance(text, float)):
                 continue
             sentences = sent_tokenize(text)
-            emotionSentenceCounts[emotionId] += len(sentences)
             totalSentences += len(sentences)
-        break
-        emotionId += 1
 
     for i in range(len(emotionSentenceCounts)):
         priors[i] = emotionSentenceCounts[i] / totalSentences
 
         if(shouldPrint):
-            print(f"{labels[i]} {priors[i]:.4f}")
+            print(f"{emotions[i]} {priors[i]:.4f}")
 
 def getTotalVocabSet():
     vocabulary = set()
@@ -104,45 +110,48 @@ def getTotalVocabSet():
 
     return vocabulary
         
-def getEmotionLiklihoods(category):
+def getEmotionLiklihoods(emotion):
     column = -1
     for i in range(len(labels)):
-        if((category + " Sentence").lower() in labels[i].lower()):
+        if((emotion + " Sentence").lower() in labels[i].lower()):
             column = i 
             break
 
     if(column == -1):
-        print("No category: ", category)
+        print("No emotion: ", emotion)
         return
 
     vocabulary = getTotalVocabSet()
-    categoryLikelihoods = {}
+    emotionLikelihoods = {}
     for i in vocabulary:   
-        categoryLikelihoods[i] = 1
+        emotionLikelihoods[i] = 1
 
    
     a, b = arr.shape
     a = 29 # Training
-    
-    for i in range(b):
-        text = arr[i, column]
-        if(isinstance(text, float)):
-            continue
-        words = word_tokenize(text)
-        for word in words:
-            if(word in categoryLikelihoods):
-                categoryLikelihoods[word] += 1
-            else:
-                categoryLikelihoods[word] = 1
+
+    for col in range(1,b,2):
+        if(emotion.lower() in labels[col].lower()):
+            #print(col)
+            for k in range(a):
+                text = arr[k, column]
+                if(isinstance(text, float)):
+                    continue
+                words = word_tokenize(text)
+                for word in words:
+                    if(word in emotionLikelihoods):
+                        emotionLikelihoods[word] += 1
+                    else:
+                        emotionLikelihoods[word] = 1  
 
     counter = 0
-    for i in categoryLikelihoods.values():
+    for i in emotionLikelihoods.values():
         counter += i
 
-    for key in categoryLikelihoods.keys():
-        categoryLikelihoods[key] = categoryLikelihoods[key] / counter
+    for key in emotionLikelihoods.keys():
+        emotionLikelihoods[key] = emotionLikelihoods[key] / counter
 
-    return categoryLikelihoods
+    return emotionLikelihoods
 
 def printDictNice(dictionary):
     for key in dictionary:
@@ -198,10 +207,16 @@ def getBayesPrediction(sentence):
 
 
 
-#question3_1()
+#question3_1(1)
 
 
 sentence = "As she hugged her daughter goodbye on the first day of college, she felt both sad to see her go and joyful knowing that she was embarking on a new and exciting chapter in her life."
 #printDictNice(getEmotionLiklihoods("sadness"))
 #print(getBayesValue(sentence, "sadness"))
-print(getBayesPrediction(sentence))
+#print(getBayesPrediction(sentence))
+
+
+#print(getEmotionLiklihoods("Fear"))
+printDictNice(getEmotionLiklihoods("Fear"))
+
+question3_1()
