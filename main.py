@@ -2,11 +2,14 @@ import pandas as pd
 import nltk
 from nltk.tokenize import word_tokenize, sent_tokenize
 import numpy as np
+import re
+
 
 emotions = ["Fear", "Anger", "Surprise", "Disgust", "Sadness", "Joy"]
 
 df = pd.read_csv("Data.csv")
-df = df.applymap(lambda x: x.lower() if isinstance(x, str) else x)
+#df = df.applymap(lambda x: x.lower() if isinstance(x, str) else x)
+df = df.applymap(lambda x: re.sub(r'\s+', ' ', x.lower()) if isinstance(x, str) else x)
 tokensDf = pd.DataFrame(index=df.index, columns=df.columns)
 arr = df.to_numpy()
 labels = df.columns.to_list()
@@ -35,6 +38,9 @@ def countTokensNP():
             count += len(words)
     print(count)
 
+
+
+
 def getPriors(shouldPrint = 0):
     priors = {}
 
@@ -46,7 +52,6 @@ def getPriors(shouldPrint = 0):
     emotionSentenceCounts = np.zeros(len(emotions))
 
     for i in range(len(emotionSentenceCounts)):
-        #for col in range(13,14,2):
         for col in range(1,b,2):
             if(emotions[i].lower() in labels[col].lower()):
                 for k in range(a):
@@ -70,6 +75,9 @@ def getPriors(shouldPrint = 0):
         priors[emotions[i]] = float(emotionSentenceCounts[i] / totalSentences)
 
     return priors
+
+
+getPriors()
 
 def getTotalVocabSet():
     vocabulary = set()
@@ -241,5 +249,8 @@ sentence = "As she hugged her daughter goodbye on the first day of college, she 
 
 
 #printDictNice(getPriors())
+
 createConfusionMatrix()
 #print(printDictNice(getPriors()))
+
+
